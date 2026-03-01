@@ -1,108 +1,59 @@
-// This BankCard class digitally represents a physical card for the sake of 
-// the overall bank atm simulation program. It holds cardholder information,
-// and accounts with balances adjustable by card methods. Has card# and PIN.
-
-#include <iostream>
-#include <vector>
+#include "BankCard.h"
+#include <cctype>
 #include <algorithm>
-#include "cardaccounts.h"
-using namespace std;
 
-class BankCard {
-    public:
-        BankCard() {
-            // Generate a random card number and set basic info with input validation
-            cardNumber = to_string(8008123400000000 + rand() % 99999999);
-            SetName();
-            SetPIN();
+BankCard::BankCard(std::string userId, std::string pin, std::vector<Account> accounts)
+    : userId_(std::move(userId)), pin_(std::move(pin)), accounts_(std::move(accounts)) {}
 
-            // Asks for number of accounts to add to card and adds them
-            AddAccounts();
-        }
-        void SetPIN();
-        void Deposit(Account acc);
-        void Withdraw(Account acc);
-        void Transfer(Account acc1, Account acc2);
-        
-    private:
-        vector<Account> accounts;
-        string cardNumber;
-        string holderName;
-        string cardPIN;
-        void SetName();
-        void AddAccounts();                   
-};
+const std::string& BankCard::UserId() const { return userId_; }
 
-void BankCard::SetName() {
-    // Set the cardholder's name with input validation to ensure it's not empty and contains only letters
-    cout << "Enter cardholder name: ";
-    
-    string name;
-    bool validName = false;
-
-    while (!validName) {
-        getline(cin, name);
-        if (!name.empty() && all_of(name.begin(), name.end(), ::isalpha)) {
-            validName = true;
-        } else {
-            cout << "Error. Please enter a valid name: ";
-        }
-    }
-    holderName = name;
+bool BankCard::CheckPin(const std::string& pin) const {
+    return pin == pin_;
 }
 
-void BankCard::SetPIN() {
-    // Set the card's PIN with input validation to ensure it's a 4-digit number
-    cout << "Enter new 4-digit PIN: ";
-    
-    string newPIN;
-    bool validPIN = false;
-
-    while (!validPIN) {
-        cin >> newPIN;
-        if (newPIN.length() == 4 && all_of(newPIN.begin(), newPIN.end(), ::isdigit)) {
-            validPIN = true;
-        } else {
-            cout << "Invalid PIN. Please enter a 4-digit number: ";
-        }
-    }
-
-    cardPIN = newPIN;
+std::vector<std::string> BankCard::AccountNames() const {
+    std::vector<std::string> out;
+    out.reserve(accounts_.size());
+    for (const auto& a : accounts_) out.push_back(a.DisplayName());
+    return out;
 }
 
-void BankCard::AddAccounts() {
-    // Adds user-specified # of accounts to the card
-    cout << "How many accounts (1-3) would you like to add to this card? ";
-            
-            int numAccounts;
-            bool validInput = false;
+int BankCard::AccountCount() const { return static_cast<int>(accounts_.size()); }
 
-            // Validate user input for number of accounts
-            while (!validInput) {
-                cin >> numAccounts;
-                if (numAccounts > 0 && numAccounts <= 3 && cin.good()) {
-                    validInput = true;
-                } else {
-                    cout << "Invalid input. Amount must be between 1 and 3: ";
-                }
-            }
-
-            // Add the specified number of accounts to the accounts vector
-            for (int i = 0; i < numAccounts; i++) {
-                accounts.push_back(Account());
-            }
+bool BankCard::ValidIndex(int idx) const {
+    return idx >= 0 && idx < static_cast<int>(accounts_.size());
 }
 
-void BankCard::Deposit(Account acc) {
-    // Implementation for depositing money into an account
-    
+double BankCard::GetBalance(int idx) const {
+    if (!ValidIndex(idx)) return 0.0;
+    return accounts_[idx].Balance();
 }
 
-void BankCard::Withdraw(Account acc) {
-    // Implementation for withdrawing money from an account
-    
+bool BankCard::Deposit(int idx, double amount) {
+    if (!ValidIndex(idx)) return false;
+    return accounts_[idx].Deposit(amount);
 }
 
-void BankCard::Transfer(Account acc1, Account acc2) {
-    // Implementation for transferring money between accounts on the card
+bool BankCard::Withdraw(int idx, double amount) {
+    if (!ValidIndex(idx)) return false;
+    return accounts_[idx].Withdraw(amount);
+}
+
+bool BankCard::Transfer(int fromIdx, int toIdx, double amount) {
+    if (!ValidIndex(fromIdx) || !ValidIndex(toIdx)) return false;
+    if (fromIdx == toIdx) return false;
+    if (amount <= 0.0) return false;
+
+    // Withdraw first, then deposit (simple transactional pattern)
+    if (!accounts_[fromIdx].Withdraw(amount)) return false;
+    accounts_[toIdx].Deposit(amount);
+    return true;
+}
+
+bool BankCard::ChangePin(const std::string& newPin) {
+    // simple policy: 4 digits
+    if (newPin.size() != 4) return false;
+    if (!std::all_of(newPin.begin(), newPin.end(), ::isdigit)) return false;
+    pin_ = newPin;
+    return true;
 }

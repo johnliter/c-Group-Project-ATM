@@ -1,0 +1,27 @@
+# Ignore compiled ATM executables
+atm.exe
+ATM.exe
+
+# Ignore all Windows executables
+*.exe
+
+# Ignore build output directories
+/build/
+/bin/
+/Debug/
+/Release/
+
+# Ignore object files
+*.o
+*.obj
+
+# Ignore VS Code settings 
+.vscode/
+
+# Ignore CMake build artifacts (if using CMake)
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+
+# Ignore macOS/Linux executables named atm
+atm

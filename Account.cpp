@@ -1,55 +1,32 @@
-// This Account class is to be used with the ATM and BankCard
-// Holds a monetary balance, adjustable by a BankCard object,
-// and has a type (checking or savings) and an account number.
+#include "Account.h"
+#include <sstream>
+#include <iomanip>
 
-#include <iostream>
-#include "cardaccounts.h"
-using namespace std;
+Account::Account(AccountType type, std::string number, double startingBalance)
+    : type_(type), number_(std::move(number)), balance_(startingBalance) {}
 
-class Account {
-    public:
-        Account() {
-            // Set default account type, number, and name based on user input
-            SetAccountType();
-            accName = (accountType == AccountType::CHECKING ? "Checking ..." : "Savings ...") + accNumber.substr(-5, -1);
-        };
-    private:
-        AccountType accountType;
-        string accNumber;
-        string accName;
-        double accBalance = 0.00;
-        void SetAccountType();
-};
+AccountType Account::Type() const { return type_; }
+const std::string& Account::Number() const { return number_; }
 
-enum class AccountType {
-    CHECKING,
-    SAVINGS
-};
-
-void Account::SetAccountType() {
-    cout << "1) Checking\n2) Savings\nSelect account type to add: ";
-
-    int choice;
-    bool validChoice = false;
-
-    // Validate user input for account type selection
-    while (!validChoice) {
-        cin >> choice;
-        if (choice == 1 || choice == 2) {
-            validChoice = true;
-        } else {
-            cout << "Invalid choice. Please select 1 for Checking or 2 for Savings: ";
-        }
-    }
-    
-    // Set account type and generate account number based on choice (checking starts with 1, savings starts with 2)
-    AccountType accountType;
-    if (choice == 1) {
-        accountType = AccountType::CHECKING;
-        accNumber = to_string(1000000 + rand() % 999999);
-    } else {
-        accountType = AccountType::SAVINGS;
-        accNumber = to_string(2000000 + rand() % 999999);
-    }
+std::string Account::DisplayName() const {
+    // Show only last 4 digits for privacy
+    std::string last4 = (number_.size() >= 4) ? number_.substr(number_.size() - 4) : number_;
+    std::ostringstream oss;
+    oss << (type_ == AccountType::Checking ? "Checking" : "Savings") << " ••••" << last4;
+    return oss.str();
 }
 
+double Account::Balance() const { return balance_; }
+
+bool Account::Deposit(double amount) {
+    if (amount <= 0.0) return false;
+    balance_ += amount;
+    return true;
+}
+
+bool Account::Withdraw(double amount) {
+    if (amount <= 0.0) return false;
+    if (amount > balance_) return false;
+    balance_ -= amount;
+    return true;
+}
